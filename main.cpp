@@ -9,54 +9,236 @@
 
 
 using namespace std;
+// *****************************************
+// Author: Alberto Labrada Soto
+// 
+// BinaryTree.h
+// class BinaryTree
+// binary tree definition header.
+// *****************************************
+
+
+// definition of node
+template <class T>
+struct Node
+{
+	T data;
+	Node<T>* left;
+	Node<T>* right;
+
+};
+
+// definition of class
+template <class T>
+class BinaryTree
+{
+public:
+
+	void insert(const T&);
+	// insertion
+	void insertChildren(const T& parent, const T& children1, const T& children2);
+	// insertion in node which p points
+	void insertTerminal(const T& parent, const T& child);
+	// insertion of terminal
+	BinaryTree();
+	// default constructor
+	Node<T>* root;
+
+protected:
+	Node<T>* parent;
+private:
+	bool found = false;
+	void searchInorder(const T& data, Node<T>* p, Node<T>* ch1, Node<T>* ch2);
+	// search inorder at specific pointer and insert two children
+	void searchInorder(const T& data, Node<T>* p, Node<T>* ch);
+	// search inorder and insert one children
+};
+
+// *****************************************
+// Author: Alberto Labrada Soto
+// 
+// BinaryTree.cpp
+// class BinaryTree
+// binary tree implementation.
+// *****************************************
+
+
+template <class T>
+void BinaryTree<T>::insert(const T& data)
+{
+	// S
+	Node<T>* newNode; // pointer to create node;
+	newNode = new Node<T>;
+	newNode->data = data;
+	newNode->left = nullptr;
+	newNode->right = nullptr;
+
+	if (root == nullptr)
+		root = newNode;
+
+}
+
+template <class T>
+void BinaryTree<T>::insertChildren(const T & parentData, const T & childrenLeft, const T & childrenRight)
+{
+	// pointer to create node;
+	Node<T>* newNodeLeft;
+	Node<T>* newNodeRight;
+
+	newNodeLeft = new Node<T>;
+	newNodeLeft->data = childrenLeft;
+	newNodeLeft->left = nullptr;
+	newNodeLeft->right = nullptr;
+
+	newNodeRight = new Node<T>;
+	newNodeRight->data = childrenRight;
+	newNodeRight->left = nullptr;
+	newNodeRight->right = nullptr;
+
+	// find note parent
+	searchInorder(parentData, root, newNodeLeft, newNodeRight);
+	if (found) found = false;
+
+}
+
+template <class T>
+void BinaryTree<T>::insertTerminal(const T & parent, const T & child)
+{
+	// pointer to create node;
+	Node<T>* newNode;
+
+	newNode = new Node<T>;
+	newNode->data = child;
+	newNode->left = nullptr;
+	newNode->right = nullptr;
+
+	// find node parent
+	searchInorder(parent, root, newNode);
+	if (found) found = false;
+}
+
+
+template <class T>
+void BinaryTree<T>::searchInorder(const T & data, Node<T> * p, Node<T> * ch1, Node<T> * ch2)
+{
+	if (p != nullptr && !found)
+	{
+		searchInorder(data, p->left, ch1, ch2);
+		if (p->data == data)
+		{
+			p->left = ch1;
+			p->right = ch2;
+			found = true;
+		}
+		searchInorder(data, p->right, ch1, ch2);
+	}
+}
+
+template <class T>
+void BinaryTree<T>::searchInorder(const T & data, Node<T> * p, Node<T> * ch)
+{
+	if (p != nullptr && !found)
+	{
+		searchInorder(data, p->left, ch);
+		if (p->data == data)
+		{
+			p->left = ch;
+			found = true;
+		}
+		searchInorder(data, p->right, ch);
+	}
+}
+
+template <class T>
+BinaryTree<T>::BinaryTree()
+{
+	root = nullptr;
+}
+
+
+
 
 class CFGrammar 
 {
-	vector<char> _terminals;
-	vector<char> _nonterminals;
-	multimap<char, string> _m;
-
 public:
-	void setTerminals(vector<char> terminals) { _terminals = terminals; }
-	void setMap(multimap<char, string> m) { _m = m; }
-	void printTerminals() { for (auto i : _terminals ) cout << i << ", "; }
-	void printMap() { for (auto i : _m) cout << i.first << "->" << i.second << endl; }
-	int getTerminalsNum() { return _terminals.size(); }
-	multimap<char, string> getMap() { return _m; }
+	CFGrammar(vector<char> v, multimap<char, string> m);
+	void CYK();
+	string calculateTerminals(int i, int j, vector<vector<string>>& cykTable);
+	bool isIn(char c, string str);
+
+	void printTerminals() { for (char ch : terminals) cout << ch << ","; }
+	void printMap() { for (auto i : transitions) cout << i.first << "->" << i.second << endl; }
+
+private:
+	vector<char> terminals;
+	multimap<char, string> transitions;
+	void printTable(vector<vector<string>>, int);
+	void generateTree(vector<vector<string>>, int);
 
 
 };
 
-void printTable(vector<vector<string>> p, int n)
-{
-	cout << endl;
+CFGrammar::CFGrammar(vector<char> v, multimap<char, string> m) : terminals(v), transitions(m) {}
 
+void CFGrammar::CYK()
+{
+	// input de cadena
+	string str;
+	cout << "Escriba cadena: ";
+	cin >> str;
+	cout << "Algoritmo CYK: " << endl;
+
+	// obtener tamanio de cadena
+	int n = str.size();
+
+	// mapa de transiciones
+	multimap<char, string> t_map = transitions;
+
+	// matriz shifteada (1...n)
+	vector<vector<string>> mat(n + 1);
+	for (int i = 1; i <= n; i++)
+		mat[i] = vector<string>(n + 1);
+
+	// initialize mat, by ChNF, one nonterminal is produced by one(or more) single terminal
+	char t;
 	for (int i = 1; i <= n; i++)
 	{
-		for (int j = 1; j <= n; j++)
-		{
-			cout << setw(5) << p[i][j];
-		}
-		cout << endl;
+		t = str[i - 1];
+		for (auto trans : t_map)
+			if (trans.second[1] == t)
+				mat[i][i] += trans.first;
 	}
+
+	// algorithm DP
+	int diag, i, j;
+	for (diag = 1; diag <= n - 1; diag++)
+		for (i = 1; i <= n - diag; i++)
+		{
+			j = i + diag;
+			mat[i][j] = calculateTerminals(i, j, mat);
+		}
+
+
+	printTable(mat, n);
+	if (isIn('S', mat[1][n]))
+	{
+		cout << "Cadena " + str + " pertenece a L(G)" << endl;
+		generateTree(mat, n);
+		cout << "tree ready" << endl;
+	}
+	else cout << "Cadena " + str + " no pertenece a L(G)" << endl;
 }
 
-bool isIn(char c, string str)
+string CFGrammar::calculateTerminals(int i, int j, vector<vector<string>>& cykTable)
 {
-	for (char ch : str) if (ch == c) return true;
-	return false;
-}
-
-
-string calculateTerminals(int i, int j, vector<vector<string>> mat, CFGrammar grammar)
-{
+	// helper func which obtains the string of combining acceptable terminals
 	string combination = "";
-	string terminals = "";
-	multimap<char, string> t_map = grammar.getMap();
+	string strTerminals = "";
+	multimap<char, string> t_map = transitions;
 
 	for (int k = i; k < j; k++)
-		for (char cha : mat[i][k])
-			for (char chb : mat[k + 1][j])
+		for (char cha : cykTable[i][k])
+			for (char chb : cykTable[k + 1][j])
 			{
 				combination += cha;
 				combination += chb;
@@ -64,104 +246,130 @@ string calculateTerminals(int i, int j, vector<vector<string>> mat, CFGrammar gr
 				{
 					if (trans.second.compare(combination) == 0)
 					{
-						if (!isIn(trans.first, terminals)) terminals += trans.first;
+						if (!isIn(trans.first, strTerminals)) strTerminals += trans.first;
 					}
 				}
 				combination.clear();
 			}
-	return terminals;
-}
-// construct tree (graph)
-void createGraph(vector<vector<string>> mat, CFGrammar grammar)
-{
-	
+	return strTerminals;
 }
 
-void CYK(string str, CFGrammar grammar)
+bool CFGrammar::isIn(char c, string str)
 {
-	// inicializar matriz nxn donde n es el numero de caracteres en string;
-	int n = str.size();
-	// matriz
-	vector<vector<string>> mat(n+1);
+	for (char ch : str) if (ch == c) return true;
+	return false;
+}
+
+void CFGrammar::printTable(vector<vector<string>> p, int n)
+{
 	for (int i = 1; i <= n; i++)
 	{
-		mat[i] = vector<string>(n+1);
+		for (int j = 1; j <= n; j++)
+			cout << setw(5) << p[i][j];
+		cout << endl;
 	}
-
-	// initialize, by ChNF one nonterminal is produced by one terminal
-	int i, j, diag;
-	multimap<char, string> t_map = grammar.getMap();
-	for (i = 1; i <= n; i++) {
-		char t = str[i-1];
-		for (auto trans : t_map)
-		{
-			if (trans.second[1] == t)
-			{
-				mat[i][i] += trans.first;
-			}
-		}
-	}
-
-	// algorithm
-	for (diag = 1; diag <= n-1; diag++)
-	{
-		for (i = 1; i <= n - diag; i++)
-		{
-			j = i + diag;
-			mat[i][j] = calculateTerminals(i, j, mat, grammar);
-		}
-	}
-	printTable(mat, n);
-	if (isIn('S', mat[1][n])) cout << "Cadena " + str + " pertenece a L(G)";
-	else cout << "Cadena " + str + " no pertenece a L(G)";
-
-	//// create graph
-	//ofstream outputFile;
-	//outputFile.open("graph.txt");
-	//outputFile << grammar.getTerminalsNum() << endl;
-	//queue<string> remaining;
-	//remaining.push(mat[1][n]);
-	//outputFile << mat[1][n]  << " ";
-	//while (!remaining.empty)
-	//{
-	//	int diag = n - 1;
-	//	string combination = "";
-	//	string terminals = "";
-	//	multimap<char, string> t_map = grammar.getMap();
-
-	//	for (int k = i; k < j; k++)
-	//	{
-	//		if (mat[i][k].size() == 1 && mat[k + 1][j].size() == 1)
-	//		{
-	//			combination += mat[i][k] + mat[k + 1][j];
-	//			for (auto trans : t_map)
-	//			{
-	//				if (trans.second.compare(combination) == 0)
-	//				{
-	//					if (!isIn(trans.first, terminals)) terminals += trans.first;
-	//				}
-	//			}
-
-	//		}
-	//		combination.clear();
-	//	}
-	//}
-	
-	//outputFile.close();
+	cout << endl;
 }
 
-
-
-void traverse(vector<vector<char>> mat)
+void CFGrammar::generateTree(vector<vector<string>> p, int n)
 {
+	
+	// a pair: name of terminal, pair cell i, j that was obtained
+	typedef pair<string, pair<int, int>> terminalCell;
 
+	// create empty Tree
+	BinaryTree<terminalCell> tree = BinaryTree<terminalCell>();
+
+	// queue of terminals to be processed
+	queue<terminalCell> remaining;
+
+	// dec variables
+	int i, j;
+	string combination = "";
+	string terminals = "";
+
+	// get transitions
+	multimap<char, string> t_map = transitions;
+	
+	// initialize
+	// add S to current terminal
+	terminalCell current = make_pair(p[1][n], make_pair(1, n));
+	// add to queue to process its children
+	remaining.push(current);
+	// add to tree
+	tree.insert(current);
+
+	// algorithm
+	while (!remaining.empty())
+	{
+		current = remaining.front(); // terminal a procesar
+		remaining.pop();
+		// i, j position where is located in p (cykTable)
+		i = current.second.first;
+		j = current.second.second;
+		if (i == j)
+		{
+			// find terminal
+			for (auto trans : t_map)
+			{
+				if (trans.first == current.first[0])
+				{
+					// add terminal node;
+					terminalCell t = make_pair(trans.second, make_pair(i, j));
+					tree.insertTerminal(current, t);
+				}
+			}
+		}
+		else
+		{
+
+			bool inserted = false;
+			for (int k = i; k < j; k++)
+			{
+				for (char cha : p[i][k])
+				{
+					for (char chb : p[k + 1][j])
+					{
+						combination += cha;
+						combination += chb;
+						for (auto trans : t_map)
+						{
+							if (trans.second.compare(combination) == 0)
+							{
+								terminalCell t1 = make_pair(to_string(cha), make_pair(i, k));
+								terminalCell t2 = make_pair(to_string(chb), make_pair(k + 1, j));
+								remaining.push(t1);
+								remaining.push(t2);
+							
+								tree.insertChildren(current, t1, t2);
+								inserted = true;
+								break;
+
+							}
+						}
+						combination.clear();
+						if (inserted) break;
+					}
+					if (inserted) break;
+				}
+				if (inserted)
+				{
+					inserted = false;
+					break;
+				}
+			}
+		}
+
+	}
+
+	cout << tree.root << endl;
+	
 }
 
 
 int main()
 {
 	vector<char> t_terminals;
-	CFGrammar grammar;
 	ifstream inputFile;
 	multimap<char, string> t_m;
 	string line;
@@ -174,7 +382,7 @@ int main()
 	}
 	else
 	{
-		cout << "Gramatica en FNCh: " << endl;
+		cout << "Grapica en FNCh: " << endl;
 		while (getline(inputFile, line))
 		{
 			cout << line << endl;
@@ -197,18 +405,14 @@ int main()
 
 			
 		}
-		grammar.setTerminals(t_terminals);
-		//grammar.printTerminals();
-		cout << endl;
 
-		grammar.setMap(t_m);
+		CFGrammar grammar(t_terminals, t_m);
+
+		//grammar.printTerminals();
+
 		//grammar.printMap();
 
-		string cadena;
-		cout << "Escriba cadena: ";
-		cin >> cadena;
-		cout << "Algoritmo CYK: " << endl;
-		CYK(cadena, grammar);
+		grammar.CYK();
 
 		inputFile.close();
 	}
