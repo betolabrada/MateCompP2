@@ -9,154 +9,6 @@
 
 
 using namespace std;
-// *****************************************
-// Author: Alberto Labrada Soto
-// 
-// BinaryTree.h
-// class BinaryTree
-// binary tree definition header.
-// *****************************************
-
-
-// definition of node
-template <class T>
-struct Node
-{
-	T data;
-	Node<T>* left;
-	Node<T>* right;
-
-};
-
-// definition of class
-template <class T>
-class BinaryTree
-{
-public:
-
-	void insert(const T&);
-	// insertion
-	void insertChildren(const T& parent, const T& children1, const T& children2);
-	// insertion in node which p points
-	void insertTerminal(const T& parent, const T& child);
-	// insertion of terminal
-	BinaryTree();
-	// default constructor
-	Node<T>* root;
-
-protected:
-	Node<T>* parent;
-private:
-	bool found = false;
-	void searchInorder(const T& data, Node<T>* p, Node<T>* ch1, Node<T>* ch2);
-	// search inorder at specific pointer and insert two children
-	void searchInorder(const T& data, Node<T>* p, Node<T>* ch);
-	// search inorder and insert one children
-};
-
-// *****************************************
-// Author: Alberto Labrada Soto
-// 
-// BinaryTree.cpp
-// class BinaryTree
-// binary tree implementation.
-// *****************************************
-
-
-template <class T>
-void BinaryTree<T>::insert(const T& data)
-{
-	// S
-	Node<T>* newNode; // pointer to create node;
-	newNode = new Node<T>;
-	newNode->data = data;
-	newNode->left = nullptr;
-	newNode->right = nullptr;
-
-	if (root == nullptr)
-		root = newNode;
-
-}
-
-template <class T>
-void BinaryTree<T>::insertChildren(const T & parentData, const T & childrenLeft, const T & childrenRight)
-{
-	// pointer to create node;
-	Node<T>* newNodeLeft;
-	Node<T>* newNodeRight;
-
-	newNodeLeft = new Node<T>;
-	newNodeLeft->data = childrenLeft;
-	newNodeLeft->left = nullptr;
-	newNodeLeft->right = nullptr;
-
-	newNodeRight = new Node<T>;
-	newNodeRight->data = childrenRight;
-	newNodeRight->left = nullptr;
-	newNodeRight->right = nullptr;
-
-	// find note parent
-	searchInorder(parentData, root, newNodeLeft, newNodeRight);
-	if (found) found = false;
-
-}
-
-template <class T>
-void BinaryTree<T>::insertTerminal(const T & parent, const T & child)
-{
-	// pointer to create node;
-	Node<T>* newNode;
-
-	newNode = new Node<T>;
-	newNode->data = child;
-	newNode->left = nullptr;
-	newNode->right = nullptr;
-
-	// find node parent
-	searchInorder(parent, root, newNode);
-	if (found) found = false;
-}
-
-
-template <class T>
-void BinaryTree<T>::searchInorder(const T & data, Node<T> * p, Node<T> * ch1, Node<T> * ch2)
-{
-	if (p != nullptr && !found)
-	{
-		searchInorder(data, p->left, ch1, ch2);
-		if (p->data == data)
-		{
-			p->left = ch1;
-			p->right = ch2;
-			found = true;
-		}
-		searchInorder(data, p->right, ch1, ch2);
-	}
-}
-
-template <class T>
-void BinaryTree<T>::searchInorder(const T & data, Node<T> * p, Node<T> * ch)
-{
-	if (p != nullptr && !found)
-	{
-		searchInorder(data, p->left, ch);
-		if (p->data == data)
-		{
-			p->left = ch;
-			found = true;
-		}
-		searchInorder(data, p->right, ch);
-	}
-}
-
-template <class T>
-BinaryTree<T>::BinaryTree()
-{
-	root = nullptr;
-}
-
-
-
 
 class CFGrammar 
 {
@@ -174,6 +26,7 @@ private:
 	multimap<char, string> transitions;
 	void printTable(vector<vector<string>>, int);
 	void generateTree(vector<vector<string>>, int);
+	void printTree();
 
 
 };
@@ -224,7 +77,6 @@ void CFGrammar::CYK()
 	{
 		cout << "Cadena " + str + " pertenece a L(G)" << endl;
 		generateTree(mat, n);
-		cout << "tree ready" << endl;
 	}
 	else cout << "Cadena " + str + " no pertenece a L(G)" << endl;
 }
@@ -277,9 +129,6 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 	// a pair: name of terminal, pair cell i, j that was obtained
 	typedef pair<string, pair<int, int>> terminalCell;
 
-	// create empty Tree
-	BinaryTree<terminalCell> tree = BinaryTree<terminalCell>();
-
 	// queue of terminals to be processed
 	queue<terminalCell> remaining;
 
@@ -296,13 +145,13 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 	terminalCell current = make_pair(p[1][n], make_pair(1, n));
 	// add to queue to process its children
 	remaining.push(current);
-	// add to tree
-	tree.insert(current);
 
 	// algorithm
 	while (!remaining.empty())
 	{
+		cout << endl;
 		current = remaining.front(); // terminal a procesar
+		cout << current.first << ": ";
 		remaining.pop();
 		// i, j position where is located in p (cykTable)
 		i = current.second.first;
@@ -316,7 +165,7 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 				{
 					// add terminal node;
 					terminalCell t = make_pair(trans.second, make_pair(i, j));
-					tree.insertTerminal(current, t);
+					cout << t.first;
 				}
 			}
 		}
@@ -336,15 +185,15 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 						{
 							if (trans.second.compare(combination) == 0)
 							{
-								terminalCell t1 = make_pair(to_string(cha), make_pair(i, k));
-								terminalCell t2 = make_pair(to_string(chb), make_pair(k + 1, j));
+								terminalCell t1 = make_pair(p[i][k], make_pair(i, k));
+								terminalCell t2 = make_pair(p[k+1][j], make_pair(k + 1, j));
 								remaining.push(t1);
 								remaining.push(t2);
-							
-								tree.insertChildren(current, t1, t2);
+								
+								cout << t1.first << " ";
+								cout << t2.first;
 								inserted = true;
 								break;
-
 							}
 						}
 						combination.clear();
@@ -359,13 +208,9 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 				}
 			}
 		}
-
 	}
-
-	cout << tree.root << endl;
-	
+	cout << endl;
 }
-
 
 int main()
 {
@@ -382,7 +227,7 @@ int main()
 	}
 	else
 	{
-		cout << "Grapica en FNCh: " << endl;
+		cout << "Gramatica en FNCh: " << endl;
 		while (getline(inputFile, line))
 		{
 			cout << line << endl;
