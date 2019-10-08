@@ -17,6 +17,8 @@ public:
 	void CYK();
 	string calculateTerminals(int i, int j, vector<vector<string>>& cykTable);
 	bool isIn(char c, string str);
+	bool isIn(string str, vector<string> strs);
+	int index(string str, vector<string>& strs);
 
 	void printTerminals() { for (char ch : terminals) cout << ch << ","; }
 	void printMap() { for (auto i : transitions) cout << i.first << "->" << i.second << endl; }
@@ -26,7 +28,6 @@ private:
 	multimap<char, string> transitions;
 	void printTable(vector<vector<string>>, int);
 	void generateTree(vector<vector<string>>, int);
-	void printTree();
 
 
 };
@@ -123,14 +124,25 @@ void CFGrammar::printTable(vector<vector<string>> p, int n)
 	cout << endl;
 }
 
+int CFGrammar::index(string str, vector<string>& strs)
+{
+	int c = 0;
+	strs.push_back(str);
+	for (string s : strs)
+		if (s.compare(str) == 0)
+			c++;
+	return c;
+}
+
+
 void CFGrammar::generateTree(vector<vector<string>> p, int n)
 {
 	
 	// a pair: name of terminal, pair cell i, j that was obtained
-	typedef pair<string, pair<int, int>> terminalCell;
+	typedef pair<pair<string,int>, pair<int, int>> cell;
 
 	// queue of terminals to be processed
-	queue<terminalCell> remaining;
+	queue<cell> remaining;
 
 	// dec variables
 	int i, j;
@@ -142,16 +154,18 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 	
 	// initialize
 	// add S to current terminal
-	terminalCell current = make_pair(p[1][n], make_pair(1, n));
+	cell current = make_pair(make_pair(p[1][n], 1), make_pair(1, n));
 	// add to queue to process its children
 	remaining.push(current);
 
+	vector<string> nodes;
+	nodes.push_back(current.first.first);
 	// algorithm
 	while (!remaining.empty())
 	{
 		cout << endl;
 		current = remaining.front(); // terminal a procesar
-		cout << current.first << ": ";
+		cout << current.first.first + to_string(current.first.second) << ": ";
 		remaining.pop();
 		// i, j position where is located in p (cykTable)
 		i = current.second.first;
@@ -161,11 +175,11 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 			// find terminal
 			for (auto trans : t_map)
 			{
-				if (trans.first == current.first[0])
+				if (trans.first == current.first.first[0])
 				{
 					// add terminal node;
-					terminalCell t = make_pair(trans.second, make_pair(i, j));
-					cout << t.first;
+					cell t = make_pair(make_pair(trans.second, -1), make_pair(i, j));
+					cout << t.first.first;
 				}
 			}
 		}
@@ -185,13 +199,15 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 						{
 							if (trans.second.compare(combination) == 0)
 							{
-								terminalCell t1 = make_pair(p[i][k], make_pair(i, k));
-								terminalCell t2 = make_pair(p[k+1][j], make_pair(k + 1, j));
+								int c1 = index(p[i][k], nodes);
+								int c2 = index(p[k + 1][j], nodes);
+								cell t1 = make_pair(make_pair(p[i][k], c1), make_pair(i, k));
+								cell t2 = make_pair(make_pair(p[k+1][j], c2), make_pair(k + 1, j));
 								remaining.push(t1);
 								remaining.push(t2);
 								
-								cout << t1.first << " ";
-								cout << t2.first;
+								cout << t1.first.first + to_string(t1.first.second) << " ";
+								cout << t2.first.first + to_string(t2.first.second);
 								inserted = true;
 								break;
 							}
