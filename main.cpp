@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iomanip>
 #include <queue>
+#include <algorithm>
+
 
 
 using namespace std;
@@ -17,7 +19,6 @@ public:
 	void CYK();
 	string calculateTerminals(int i, int j, vector<vector<string>>& cykTable);
 	bool isIn(char c, string str);
-	bool isIn(string str, vector<string> strs);
 	int index(string str, vector<string>& strs);
 
 	void printTerminals() { for (char ch : terminals) cout << ch << ","; }
@@ -26,7 +27,7 @@ public:
 private:
 	vector<char> terminals;
 	multimap<char, string> transitions;
-	void printTable(vector<vector<string>>, int);
+	void printTable(vector<vector<string>>&, int);
 	void generateTree(vector<vector<string>>, int);
 
 
@@ -113,12 +114,18 @@ bool CFGrammar::isIn(char c, string str)
 	return false;
 }
 
-void CFGrammar::printTable(vector<vector<string>> p, int n)
+void CFGrammar::printTable(vector<vector<string>>& p, int n)
 {
+	// sort first
+
 	for (int i = 1; i <= n; i++)
 	{
 		for (int j = 1; j <= n; j++)
+		{
+			if (p[i][j].size() > 1)
+				sort(p[i][j].begin(), p[i][j].end());
 			cout << setw(5) << p[i][j];
+		}
 		cout << endl;
 	}
 	cout << endl;
@@ -179,7 +186,8 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 				{
 					// add terminal node;
 					cell t = make_pair(make_pair(trans.second, -1), make_pair(i, j));
-					cout << t.first.first;
+					if (trans.second[0] == '"')
+						cout << t.first.first;
 				}
 			}
 		}
@@ -199,6 +207,8 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 						{
 							if (trans.second.compare(combination) == 0)
 							{
+								// c1, c2 are the index that is printed for each node
+								// makes the drawing of tree easier
 								int c1 = index(p[i][k], nodes);
 								int c2 = index(p[k + 1][j], nodes);
 								cell t1 = make_pair(make_pair(p[i][k], c1), make_pair(i, k));
@@ -227,6 +237,7 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 	}
 	cout << endl;
 }
+#define ARCHIVO "fnch.txt"
 
 int main()
 {
@@ -235,7 +246,7 @@ int main()
 	multimap<char, string> t_m;
 	string line;
 	
-	inputFile.open("fnch.txt");
+	inputFile.open(ARCHIVO);
 	if (!inputFile)
 	{
 		cerr << "failed.";
