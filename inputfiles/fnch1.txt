@@ -1,0 +1,5 @@
+S->AB|BA|SS|AC|BD
+A->"a"
+B->"b"
+C->SB
+D->SA

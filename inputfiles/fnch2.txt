@@ -1,0 +1,5 @@
+S->AB|XB
+A->"a"
+B->"b"
+X->AS
+T->AB|XB

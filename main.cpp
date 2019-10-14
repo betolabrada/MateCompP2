@@ -23,6 +23,7 @@ public:
 
 	void printTerminals() { for (char ch : terminals) cout << ch << ","; }
 	void printMap() { for (auto i : transitions) cout << i.first << "->" << i.second << endl; }
+	void clear() { terminals.clear(); transitions.clear(); }
 
 private:
 	vector<char> terminals;
@@ -116,7 +117,6 @@ bool CFGrammar::isIn(char c, string str)
 
 void CFGrammar::printTable(vector<vector<string>>& p, int n)
 {
-	// sort first
 
 	for (int i = 1; i <= n; i++)
 	{
@@ -236,8 +236,8 @@ void CFGrammar::generateTree(vector<vector<string>> p, int n)
 		}
 	}
 	cout << endl;
+	p.clear();
 }
-#define ARCHIVO "fnch.txt"
 
 int main()
 {
@@ -245,8 +245,14 @@ int main()
 	ifstream inputFile;
 	multimap<char, string> t_m;
 	string line;
+	string fileName;
+
+
+	cout << endl;
+	cout << "Escriba nombre del archivo: ";
+	cin >> fileName;
 	
-	inputFile.open(ARCHIVO);
+	inputFile.open(fileName);
 	if (!inputFile)
 	{
 		cerr << "failed.";
@@ -285,6 +291,8 @@ int main()
 		//grammar.printMap();
 
 		grammar.CYK();
+
+		grammar.clear();
 
 		inputFile.close();
 	}
